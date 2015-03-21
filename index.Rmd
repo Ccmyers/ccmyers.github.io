@@ -1,0 +1,160 @@
+---
+title       : Slidify Presentation
+subtitle    : Cousera project
+author      : Chris Myers
+job         : R hacker in training :-)
+framework   : io2012        # {io2012, html5slides, shower, dzslides, ...}
+highlighter : highlight.js  # {highlight.js, prettify, highlight}
+hitheme     : tomorrow      # 
+widgets     : []            # {mathjax, quiz, bootstrap}
+mode        : selfcontained # {standalone, draft}
+output: 
+
+  ioslides_presentation:
+
+    self_contained: true
+
+runtime: shiny
+---
+
+## Introducing my first Shiny App
+
+Started with the cool tabbed panels shiny app from
+
+http://shiny.rstudio.com/tutorial/lesson1/
+
+    runExample("06_tabsets") # tabbed panels
+
+Then added:
+
+1. interactive caption
+2. mean and median calculated for the distibution
+3. colored plot lines for mean and median on the histogram 
+4. Adding text for mean and median values on the histogram
+
+---.class #id
+
+## Shiny any deployed on Shinyapps.io
+
+Hosting shiny app here
+
+https://ccmyers.shinyapps.io/myap/
+
+Next slide is showing Shiny in Slidify and the key part for me was:
+
+  shiny (
+  ui = fluidPage(ui.R code here),
+  server = function(input, output) { server.R code here }
+  )
+
+---.class #id
+
+## Shiny app embedded in Slidiify
+
+```{r, echo=FALSE}
+
+shinyApp(
+
+  ui = fluidPage(
+
+    sidebarLayout(position = c("left"),fluid=TRUE,
+      sidebarPanel(
+         # caption that can be updated
+      textInput("caption", "Caption:", "Data Distributions"),
+            radioButtons("dist", "Distribution type:",
+                   c("Normal" = "norm",
+                     "Uniform" = "unif",
+                     "Log-normal" = "lnorm",
+                     "Exponential" = "exp")),
+            br(),
+      
+      #slider input
+      sliderInput("n", 
+                  "Number of observations:", 
+                  value = 500,
+                  min = 1, 
+                  max = 1000)
+
+ 
+       ),
+    mainPanel(
+      h3(textOutput("caption", container = span)),
+ #      plotOutput("phonePlot")
+      tabsetPanel(type = "tabs", 
+                  tabPanel("Plot", plotOutput("plot")),
+                   tabPanel("Summary", verbatimTextOutput("summary")), 
+                  tabPanel("Table", tableOutput("table"))
+            )
+
+      )
+    )
+
+  ),
+
+  
+
+  server = function(input, output) {
+    
+    data <- reactive({
+    dist <- switch(input$dist,
+                   norm = rnorm,
+                   unif = runif,
+                   lnorm = rlnorm,
+                   exp = rexp,
+                   rnorm)
+    
+    dist(input$n)
+  })
+  
+    output$caption <- renderText({
+    input$caption
+  })
+  
+    output$plot <- renderPlot({
+    dist <- input$dist
+    n <- input$n
+    mu <- mean(data())
+    med <- median(data())
+    #get max height of histogram for plotting mean and median lines
+    ht <- max(hist(data())$counts ) 
+    # plot histogram with noting mean and median
+    hist(data(), 
+         main=paste('r', dist, '(', n, ')', sep=''),
+         sub = paste('mean =',round(mu,2)),col.sub ='red',
+         xlab = paste('median =',round(med,2)), col.lab='blue')
+    # draw mean and median lines
+    lines(c(mu, mu), c(0, ht),col="red",lwd=5)
+    lines(c(med, med), c(0, ht),col="blue",lwd=5)
+    
+  })
+  
+    output$summary <- renderPrint({
+    summary(data())
+  })
+  
+    # Generate an HTML table view of the data
+  output$table <- renderTable({
+    data.frame(x=data())
+  })
+
+   
+
+  },
+
+)
+
+```
+
+---.class #id
+
+## Summary
+
+Shiny apps are pretty cool, and easy to update given the examples and tutorials!
+
+Incoporting the shiny app into Slidify took a lot of hacking, but finally worked!
+
+Will need to later see if it can also be down in R presentation (not working yet)
+
+
+
+
